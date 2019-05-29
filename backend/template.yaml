@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Twitter sentiment analysis
+
+Parameters:
+  TwitterConsumerKey:
+    Type: String
+  TwitterConsumerSecret:
+    Type: String
+  TwitterAccessToken:
+    Type: String
+  TwitterAccessTokenSecret:
+    Type: String
+
+Globals:
+  Function:
+    Timeout: 300
+  Api:
+    EndpointConfiguration: REGIONAL
+    Cors:
+      AllowMethods: "'GET'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+Resources:
+  SentimentAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: sentiment_analysis.search_sentiment_handler
+      Runtime: python3.7
+      Policies:
+        - ComprehendBasicAccessPolicy: {}
+      Environment:
+        Variables:
+          twitter_consumer_key:
+            Ref: TwitterConsumerKey
+          twitter_consumer_secret:
+            Ref: TwitterConsumerSecret
+          twitter_access_token:
+            Ref: TwitterAccessToken
+          twitter_access_token_secret:
+            Ref: TwitterAccessTokenSecret
+      Events:
+        ServerlessRestApi:
+          Type: Api
+          Properties:
+            Path: /sentiment
+            Method: get
+  
+  UserSentimentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: sentiment_analysis.user_sentiment_handler
+      Runtime: python3.7
+      Policies:
+        - ComprehendBasicAccessPolicy: {}
+      Environment:
+        Variables:
+          twitter_consumer_key:
+            Ref: TwitterConsumerKey
+          twitter_consumer_secret:
+            Ref: TwitterConsumerSecret
+          twitter_access_token:
+            Ref: TwitterAccessToken
+          twitter_access_token_secret:
+            Ref: TwitterAccessTokenSecret
+      Events:
+        ServerlessRestApi:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: get
+  
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: get_user.lambda_handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          twitter_consumer_key:
+            Ref: TwitterConsumerKey
+          twitter_consumer_secret:
+            Ref: TwitterConsumerSecret
+          twitter_access_token:
+            Ref: TwitterAccessToken
+          twitter_access_token_secret:
+            Ref: TwitterAccessTokenSecret
+      Events:
+        ServerlessRestApi:
+          Type: Api
+          Properties:
+            Path: /user/{id}
+            Method: get
+
+Outputs:
+  Endpoint:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
